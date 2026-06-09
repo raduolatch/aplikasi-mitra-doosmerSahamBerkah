@@ -19,18 +19,17 @@ class ExpenseController extends GetxController {
 
   void loadExpenses() {
     final data = StorageService.read<List>(keyExpenses, []);
-    expenses.assignAll(
-      data
-          .map((e) => ExpenseModel.fromJson(Map<String, dynamic>.from(e)))
-          .toList(),
-    );
+
+    expenses.value = data
+        .map((item) => ExpenseModel.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+
+    expenses.sort((a, b) => b.tanggal.compareTo(a.tanggal));
   }
 
   void saveExpenses() {
-    StorageService.write(
-      keyExpenses,
-      expenses.map((e) => e.toJson()).toList(),
-    );
+    final data = expenses.map((e) => e.toJson()).toList();
+    StorageService.write(keyExpenses, data);
   }
 
   void selectType(String type) {
@@ -40,56 +39,142 @@ class ExpenseController extends GetxController {
   void addExpense({
     required String desc,
     required String jumlahText,
-    DateTime? tanggal,
   }) {
+    final cleanDesc = desc.trim();
     final jumlah = Formatter.parseNumber(jumlahText);
 
-    if (desc.trim().isEmpty || jumlah <= 0) {
-      Get.snackbar('Gagal', 'Keterangan dan jumlah wajib diisi');
+    if (cleanDesc.isEmpty) {
+      Get.snackbar(
+        'Gagal',
+        'Keterangan pengeluaran tidak boleh kosong',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    if (jumlah <= 0) {
+      Get.snackbar(
+        'Gagal',
+        'Jumlah pengeluaran harus lebih dari 0',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
 
     final expense = ExpenseModel(
       id: DateTime.now().millisecondsSinceEpoch,
-      tipe: selectedType.value,
-      desc: desc.trim(),
+      tanggal: DateTime.now(),
+      desc: cleanDesc,
       jumlah: jumlah,
-      tanggal: tanggal ?? DateTime.now(),
+      tipe: selectedType.value,
     );
 
     expenses.insert(0, expense);
     saveExpenses();
 
-    Get.snackbar('Berhasil', 'Pengeluaran berhasil disimpan');
+    Get.snackbar(
+      'Berhasil',
+      'Pengeluaran berhasil ditambahkan',
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
   void deleteExpense(int id) {
     expenses.removeWhere((e) => e.id == id);
     saveExpenses();
+
+    Get.snackbar(
+      'Berhasil',
+      'Pengeluaran berhasil dihapus',
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
   void resetExpenses() {
     expenses.clear();
     saveExpenses();
-  }
 
-  int totalByType(String type) {
-    return expenses
-        .where((e) => e.tipe == type)
-        .fold(0, (sum, e) => sum + e.jumlah);
+    Get.snackbar(
+      'Berhasil',
+      'Semua data pengeluaran berhasil dihapus',
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
-
-  int get totalModal => totalByType('modal');
-  int get totalKasbon => totalByType('kasbon');
-  int get totalBonus => totalByType('bonus');
-  int get totalLain => totalByType('lain');
 
   int get totalExpense {
     return expenses.fold(0, (sum, e) => sum + e.jumlah);
   }
 
+  int get totalModal {
+    return expenses
+        .where((e) => e.tipe == 'modal')
+        .fold(0, (sum, e) => sum + e.jumlah);
+  }
+
+  int get totalOperasional {
+    return expenses
+        .where((e) => e.tipe == 'operasional')
+        .fold(0, (sum, e) => sum + e.jumlah);
+  }
+
+  int get totalKasbon {
+    return expenses
+        .where((e) => e.tipe == 'kasbon')
+        .fold(0, (sum, e) => sum + e.jumlah);
+  }
+
+  int get totalBonus {
+    return expenses
+        .where((e) => e.tipe == 'bonus')
+        .fold(0, (sum, e) => sum + e.jumlah);
+  }
+
+  int get totalLain {
+    return expenses
+        .where((e) => e.tipe == 'lain')
+        .fold(0, (sum, e) => sum + e.jumlah);
+  }
+
   int get estimatedNetProfit {
-    final tx = Get.find<TransactionController>();
-    return tx.totalProfit - totalExpense;
+    try {
+      final txC = Get.find<TransactionController>();
+      return txC.totalProfit - totalExpense;
+    } catch (_) {
+      return -totalExpense;
+    }
+  }
+
+  String getTypeEmoji(String type) {
+    switch (type) {
+      case 'modal':
+        return '🏪';
+      case 'operasional':
+        return '⚙️';
+      case 'kasbon':
+        return '💳';
+      case 'bonus':
+        return '🎁';
+      case 'lain':
+        return '📋';
+      default:
+        return '📋';
+    }
+  }
+
+  String getTypeLabel(String type) {
+    switch (type) {
+      case 'modal':
+        return 'Modal';
+      case 'operasional':
+        return 'Operasional';
+      case 'kasbon':
+        return 'Kasbon';
+      case 'bonus':
+        return 'Bonus';
+      case 'lain':
+        return 'Lainnya';
+      default:
+        return 'Lainnya';
+    }
   }
 }

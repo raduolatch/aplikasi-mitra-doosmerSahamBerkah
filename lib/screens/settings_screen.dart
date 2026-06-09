@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../controllers/settings_controller.dart';
 import '../models/settings_model.dart';
+import '../services/backup_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/admin_scaffold.dart';
 
@@ -115,6 +116,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void confirmRestore() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Restore Data'),
+        content: const Text(
+          'Restore akan menimpa data lokal saat ini dengan data dari file backup. Lanjutkan?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              BackupService.restoreData();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.text,
+              foregroundColor: AppTheme.surface,
+            ),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void confirmClearData() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Hapus Semua Data'),
+        content: const Text(
+          'Semua produk, kategori, transaksi, pengeluaran, catatan kasir, dan pengaturan akan dihapus dari perangkat ini. Yakin?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              BackupService.clearAllData();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.red,
+              foregroundColor: AppTheme.surface,
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AdminScaffold(
@@ -131,7 +188,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Expanded(child: _buildStoreCard()),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildSystemCard()),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildSystemCard(),
+                        const SizedBox(height: 16),
+                        _buildBackupCard(),
+                      ],
+                    ),
+                  ),
                 ],
               );
             }
@@ -141,6 +206,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildStoreCard(),
                 const SizedBox(height: 16),
                 _buildSystemCard(),
+                const SizedBox(height: 16),
+                _buildBackupCard(),
               ],
             );
           },
@@ -152,7 +219,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildStoreCard() {
     return _CardBox(
       title: 'Informasi Toko',
-      subtitle: 'Data ini nanti dipakai untuk struk dan laporan.',
+      subtitle: 'Data ini dipakai untuk struk dan laporan.',
       icon: Icons.storefront,
       children: [
         TextField(
@@ -309,6 +376,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.text,
               foregroundColor: AppTheme.surface,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBackupCard() {
+    return _CardBox(
+      title: 'Backup & Restore',
+      subtitle: 'Simpan dan pulihkan data lokal aplikasi.',
+      icon: Icons.backup,
+      children: [
+        const Text(
+          'Backup akan membuat file JSON berisi produk, kategori, transaksi, pengeluaran, catatan kasir, user, dan pengaturan.',
+          style: TextStyle(
+            color: AppTheme.text2,
+            fontSize: 13,
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: ElevatedButton.icon(
+            onPressed: BackupService.backupData,
+            icon: const Icon(Icons.download),
+            label: const Text('Backup Data'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.text,
+              foregroundColor: AppTheme.surface,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: OutlinedButton.icon(
+            onPressed: confirmRestore,
+            icon: const Icon(Icons.upload_file),
+            label: const Text('Restore Data'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: OutlinedButton.icon(
+            onPressed: confirmClearData,
+            icon: const Icon(Icons.delete_forever),
+            label: const Text('Hapus Semua Data Lokal'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.red,
             ),
           ),
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/transaction_model.dart';
 import '../models/settings_model.dart';
+import '../services/pdf_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/formatter.dart';
 
@@ -184,10 +185,9 @@ class ReceiptDialog extends StatelessWidget {
         ),
         ElevatedButton.icon(
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Fitur print/PDF nanti kita lanjutkan'),
-              ),
+            PdfService.printReceipt(
+              transaction: transaction,
+              settings: settings,
             );
           },
           icon: const Icon(Icons.print),
