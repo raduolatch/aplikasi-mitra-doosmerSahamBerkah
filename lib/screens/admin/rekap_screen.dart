@@ -187,6 +187,8 @@ class _RekapScreenState extends State<RekapScreen> {
         final produkList = produkMap.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value));
 
+        final width = MediaQuery.of(context).size.width;
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -229,12 +231,16 @@ class _RekapScreenState extends State<RekapScreen> {
               const SizedBox(height: 16),
 
               GridView.count(
-                crossAxisCount: MediaQuery.of(context).size.width > 800 ? 4 : 2,
+                crossAxisCount: width > 900
+                    ? 4
+                    : width > 500
+                        ? 2
+                        : 1,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 1.8,
+                childAspectRatio: width > 500 ? 1.7 : 2.5,
                 children: [
                   _StatCard(
                     title: 'Total Penjualan',
@@ -518,26 +524,38 @@ class _StatCard extends StatelessWidget {
         borderRadius: AppTheme.radiusLarge,
         border: Border.all(color: AppTheme.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Icon(icon, color: AppTheme.text2),
-          const Spacer(),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppTheme.text,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+          CircleAvatar(
+            backgroundColor: AppTheme.surface2,
+            child: Icon(icon, color: AppTheme.text),
           ),
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppTheme.text2,
-              fontSize: 12,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.text,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.text2,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

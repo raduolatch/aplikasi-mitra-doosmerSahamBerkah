@@ -20,51 +20,96 @@ class ProductController extends GetxController {
     final data = StorageService.read<List>(keyProducts, []);
 
     products.assignAll(
-      data.map((e) => ProductModel.fromJson(Map<String, dynamic>.from(e))).toList(),
+      data
+          .whereType<Map>()
+          .map(
+            (item) => ProductModel.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(),
     );
   }
 
   void saveProducts() {
     StorageService.write(
       keyProducts,
-      products.map((e) => e.toJson()).toList(),
+      products.map((product) => product.toJson()).toList(),
     );
   }
 
   List<ProductModel> get filteredProducts {
-    return products.where((p) {
-      final matchSearch = p.nama.toLowerCase().contains(searchQuery.value.toLowerCase()) ||
-          p.kode.toLowerCase().contains(searchQuery.value.toLowerCase());
+    final query = searchQuery.value.trim().toLowerCase();
+    final category = selectedCategory.value;
+
+    return products.where((product) {
+      final matchSearch = query.isEmpty ||
+          product.nama.toLowerCase().contains(query) ||
+          product.kode.toLowerCase().contains(query);
 
       final matchCategory =
-          selectedCategory.value == 'Semua' || p.kategori == selectedCategory.value;
+          category == 'Semua' || product.kategori == category;
 
       return matchSearch && matchCategory;
     }).toList();
   }
 
-  void addProduct(ProductModel product) {
+  String? addProduct(ProductModel product) {
+    final codeExists = products.any(
+      (item) =>
+          item.kode.trim().toLowerCase() ==
+          product.kode.trim().toLowerCase(),
+    );
+
+    if (codeExists) {
+      return 'Kode barang sudah digunakan';
+    }
+
     products.add(product);
     saveProducts();
-    Get.snackbar('Berhasil', 'Barang berhasil ditambahkan');
+
+    return null;
   }
 
-  void updateProduct(ProductModel product) {
-    final index = products.indexWhere((p) => p.id == product.id);
-    if (index != -1) {
-      products[index] = product;
-      saveProducts();
-      Get.snackbar('Berhasil', 'Barang berhasil diperbarui');
+  String? updateProduct(ProductModel product) {
+    final index = products.indexWhere(
+      (item) => item.id == product.id,
+    );
+
+    if (index == -1) {
+      return 'Barang tidak ditemukan';
     }
+
+    final codeExists = products.any(
+      (item) =>
+          item.id != product.id &&
+          item.kode.trim().toLowerCase() ==
+              product.kode.trim().toLowerCase(),
+    );
+
+    if (codeExists) {
+      return 'Kode barang sudah digunakan barang lain';
+    }
+
+    products[index] = product;
+    products.refresh();
+    saveProducts();
+
+    return null;
   }
 
   void deleteProduct(int id) {
-    products.removeWhere((p) => p.id == id);
+    products.removeWhere((product) => product.id == id);
     saveProducts();
   }
 
   void reduceStock(int productId, int qty) {
-    final index = products.indexWhere((p) => p.id == productId);
+    if (qty <= 0) return;
+
+    final index = products.indexWhere(
+      (product) => product.id == productId,
+    );
+
     if (index == -1) return;
 
     final product = products[index];
@@ -74,13 +119,17 @@ class ProductController extends GetxController {
       stok: newStock < 0 ? 0 : newStock,
     );
 
+    products.refresh();
     saveProducts();
   }
 
   void resetStock() {
     products.assignAll(
-      products.map((p) => p.copyWith(stok: 0)).toList(),
+      products.map(
+        (product) => product.copyWith(stok: 0),
+      ),
     );
+
     saveProducts();
   }
 }
